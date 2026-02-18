@@ -32,7 +32,10 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:svelte.dev)",
       "Bash(go test:*)",
-      "Bash(git remote add:*)"
+      "Bash(git remote add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(make test:*)"
     ]
   }
 }
