@@ -64,3 +64,6 @@ export const deleteCard = (id: string) => request<void>('DELETE', `/api/cards/${
 
 export const moveCard = (id: string, columnId: string, position: number) =>
 	request<Card>('POST', `/api/cards/${id}/move`, { column_id: columnId, position });
+
+export const moveColumn = (id: string, position: number) =>
+	request<Column>('POST', `/api/columns/${id}/move`, { position });

@@ -16,6 +16,6 @@
 		flex: 1;
 		display: flex;
 		flex-direction: column;
-		background: linear-gradient(135deg, #0079bf, #5067c5);
+		background: linear-gradient(160deg, #0f2d50 0%, #1a4a8a 45%, #1d3c7a 100%);
 	}
 </style>

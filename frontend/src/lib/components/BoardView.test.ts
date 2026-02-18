@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import BoardView from './BoardView.svelte';
 import type { Board } from '$lib/types';
 
-const { mockGetBoard, mockCreateColumn, mockDeleteColumn, mockCreateCard, mockDeleteCard, mockUpdateCard, mockMoveCard } =
+const { mockGetBoard, mockCreateColumn, mockDeleteColumn, mockCreateCard, mockDeleteCard, mockUpdateCard, mockMoveCard, mockMoveColumn } =
 	vi.hoisted(() => ({
 		mockGetBoard: vi.fn(),
 		mockCreateColumn: vi.fn(),
@@ -11,7 +11,8 @@ const { mockGetBoard, mockCreateColumn, mockDeleteColumn, mockCreateCard, mockDe
 		mockCreateCard: vi.fn(),
 		mockDeleteCard: vi.fn(),
 		mockUpdateCard: vi.fn(),
-		mockMoveCard: vi.fn()
+		mockMoveCard: vi.fn(),
+		mockMoveColumn: vi.fn()
 	}));
 
 vi.mock('$lib/api', () => ({
@@ -21,7 +22,8 @@ vi.mock('$lib/api', () => ({
 	createCard: mockCreateCard,
 	deleteCard: mockDeleteCard,
 	updateCard: mockUpdateCard,
-	moveCard: mockMoveCard
+	moveCard: mockMoveCard,
+	moveColumn: mockMoveColumn
 }));
 
 const board: Board = {
@@ -44,6 +46,7 @@ describe('BoardView', () => {
 		mockDeleteCard.mockReset().mockResolvedValue(undefined);
 		mockUpdateCard.mockReset().mockResolvedValue({});
 		mockMoveCard.mockReset().mockResolvedValue({});
+		mockMoveColumn.mockReset().mockResolvedValue({});
 	});
 
 	it('renders the board name', () => {
@@ -63,13 +66,13 @@ describe('BoardView', () => {
 		expect(screen.getByPlaceholderText('Column name...')).toBeInTheDocument();
 	});
 
-	it('creates a column and refreshes when Add is clicked', async () => {
+	it('creates a column and refreshes when Add column is clicked', async () => {
 		render(BoardView, { board });
 		await fireEvent.click(screen.getByText('+ Add column'));
 		const input = screen.getByPlaceholderText('Column name...');
 		input.value = 'Done';
 		await fireEvent.input(input);
-		await fireEvent.click(screen.getByText('Add'));
+		await fireEvent.click(screen.getByText('Add column'));
 		await waitFor(() => {
 			expect(mockCreateColumn).toHaveBeenCalledWith('b1', 'Done');
 			expect(mockGetBoard).toHaveBeenCalledWith('b1');
@@ -87,7 +90,7 @@ describe('BoardView', () => {
 	it('does not call createColumn when input is empty', async () => {
 		render(BoardView, { board });
 		await fireEvent.click(screen.getByText('+ Add column'));
-		await fireEvent.click(screen.getByText('Add'));
+		await fireEvent.click(screen.getByText('Add column'));
 		expect(mockCreateColumn).not.toHaveBeenCalled();
 	});
 });

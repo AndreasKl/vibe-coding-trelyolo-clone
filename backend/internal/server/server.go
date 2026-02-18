@@ -68,6 +68,7 @@ func New(cfg Config) *http.Server {
 	mux.Handle("POST /api/columns/{columnID}/cards", requireAuth(http.HandlerFunc(boardHandler.CreateCard)))
 	mux.Handle("PATCH /api/cards/{id}", requireAuth(http.HandlerFunc(boardHandler.UpdateCard)))
 	mux.Handle("DELETE /api/cards/{id}", requireAuth(http.HandlerFunc(boardHandler.DeleteCard)))
+	mux.Handle("POST /api/columns/{id}/move", requireAuth(http.HandlerFunc(boardHandler.MoveColumn)))
 	mux.Handle("POST /api/cards/{id}/move", requireAuth(http.HandlerFunc(boardHandler.MoveCard)))
 
 	// Apply middleware

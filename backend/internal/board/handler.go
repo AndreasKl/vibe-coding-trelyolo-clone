@@ -204,6 +204,31 @@ func (h *Handler) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) MoveColumn(w http.ResponseWriter, r *http.Request) {
+	u := auth.UserFromContext(r.Context())
+	id := r.PathValue("id")
+
+	if _, err := h.Store.ColumnBoardOwner(r.Context(), id, u.ID); err != nil {
+		httputil.Error(w, http.StatusNotFound, "column not found")
+		return
+	}
+
+	var req struct {
+		Position int `json:"position"`
+	}
+	if err := httputil.Decode(r, &req); err != nil {
+		httputil.Error(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	c, err := h.Store.MoveColumn(r.Context(), id, req.Position)
+	if err != nil {
+		httputil.Error(w, http.StatusInternalServerError, "failed to move column")
+		return
+	}
+	httputil.JSON(w, http.StatusOK, c)
+}
+
 func (h *Handler) MoveCard(w http.ResponseWriter, r *http.Request) {
 	u := auth.UserFromContext(r.Context())
 	id := r.PathValue("id")

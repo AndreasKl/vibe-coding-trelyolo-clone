@@ -243,6 +243,52 @@ func (s *Store) CardOwner(ctx context.Context, cardID, userID string) error {
 	return nil
 }
 
+func (s *Store) MoveColumn(ctx context.Context, columnID string, targetPosition int) (*Column, error) {
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var boardID string
+	var srcPosition int
+	err = tx.QueryRowContext(ctx,
+		`SELECT board_id, position FROM board_columns WHERE id=$1`, columnID,
+	).Scan(&boardID, &srcPosition)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`UPDATE board_columns SET position = position - 1 WHERE board_id=$1 AND position > $2`,
+		boardID, srcPosition,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tx.ExecContext(ctx,
+		`UPDATE board_columns SET position = position + 1 WHERE board_id=$1 AND position >= $2`,
+		boardID, targetPosition,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &Column{}
+	err = tx.QueryRowContext(ctx,
+		`UPDATE board_columns SET position=$2 WHERE id=$1
+		 RETURNING id, board_id, name, position, created_at`,
+		columnID, targetPosition,
+	).Scan(&c.ID, &c.BoardID, &c.Name, &c.Position, &c.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	c.Cards = []Card{}
+
+	return c, tx.Commit()
+}
+
 func (s *Store) MoveCard(ctx context.Context, cardID, targetColumnID string, targetPosition int) (*Card, error) {
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {

@@ -22,28 +22,28 @@ describe('Navbar', () => {
 
 	it('renders the logo link', () => {
 		render(Navbar, { user: null });
-		expect(screen.getByText('Trello Clone')).toBeInTheDocument();
+		expect(screen.getByText('FlowBoard')).toBeInTheDocument();
 	});
 
 	it('does not show user section when logged out', () => {
 		render(Navbar, { user: null });
-		expect(screen.queryByText('Logout')).not.toBeInTheDocument();
+		expect(screen.queryByText('Sign out')).not.toBeInTheDocument();
 	});
 
-	it('shows user name and logout button when logged in', () => {
+	it('shows avatar and sign out button when logged in', () => {
 		render(Navbar, { user });
-		expect(screen.getByText('Alice')).toBeInTheDocument();
-		expect(screen.getByText('Logout')).toBeInTheDocument();
+		expect(screen.getByTitle('Alice')).toBeInTheDocument();
+		expect(screen.getByText('Sign out')).toBeInTheDocument();
 	});
 
 	it('falls back to email when user has no name', () => {
 		render(Navbar, { user: { ...user, name: '' } });
-		expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+		expect(screen.getByTitle('alice@example.com')).toBeInTheDocument();
 	});
 
-	it('calls logout API on logout button click', async () => {
+	it('calls logout API on sign out button click', async () => {
 		render(Navbar, { user });
-		await fireEvent.click(screen.getByText('Logout'));
+		await fireEvent.click(screen.getByText('Sign out'));
 		expect(mockLogout).toHaveBeenCalled();
 	});
 });

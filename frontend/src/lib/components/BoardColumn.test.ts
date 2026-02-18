@@ -65,7 +65,7 @@ describe('BoardColumn', () => {
 		const input = screen.getByPlaceholderText('Card title...');
 		input.value = 'New Card';
 		await fireEvent.input(input);
-		await fireEvent.click(screen.getByText('Add'));
+		await fireEvent.click(screen.getByText('Add card'));
 		await waitFor(() => {
 			expect(mockCreateCard).toHaveBeenCalledWith('col1', 'New Card');
 			expect(onrefresh).toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe('BoardColumn', () => {
 	it('deletes a card and calls onrefresh', async () => {
 		const onrefresh = vi.fn();
 		render(BoardColumn, { column, onrefresh });
-		const deleteButtons = screen.getAllByText('Delete');
+		const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
 		await fireEvent.click(deleteButtons[0]);
 		await waitFor(() => {
 			expect(mockDeleteCard).toHaveBeenCalledWith('card1');
