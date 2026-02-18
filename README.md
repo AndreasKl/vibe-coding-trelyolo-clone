@@ -8,6 +8,41 @@ A Kanban board web application. Create boards with columns, add cards, and drag 
 - **Frontend**: SvelteKit (Svelte 5), TypeScript
 - **Auth**: Email/password (bcrypt) + OAuth2 (Google, Microsoft)
 
+## Architecture
+
+The app is split into two independent processes that talk over HTTP.
+
+```
+Browser
+  │
+  ├── GET /api/*  ──────────────────────────────► Go backend (:8080)
+  │                                                    │
+  │   (Vite proxy in dev; same origin in prod)         └── PostgreSQL
+  │
+  └── Everything else ──► SvelteKit (:5173 dev)
+```
+
+**Request flow**
+
+1. SvelteKit's `+layout.server.ts` runs on every navigation, calls `GET /api/auth/me`, and either returns the user or redirects to `/login`. Auth state is never stored client-side.
+2. Page components call the Go API directly from the browser via `$lib/api.ts`. All API calls include the session cookie automatically.
+3. The Go backend validates the session cookie on every protected route via the `RequireAuth` middleware, which looks up the token in the DB and injects the `*User` into the request context.
+
+**Session management**
+
+Sessions are stored as rows in PostgreSQL. The cookie holds a random token; there is no JWT. On login/signup the server sets an HTTP-only, `SameSite=Lax` cookie. On logout the token row is deleted and the cookie is cleared.
+
+**Data model**
+
+```
+users
+  └── boards (user_id FK)
+        └── board_columns (board_id FK, ordered by position)
+              └── cards (column_id FK, ordered by position)
+```
+
+Card positions are integers. Moving a card is a single transaction: close the gap in the source column, open a gap in the target column, then update the card's `column_id` and `position`.
+
 ## Prerequisites
 
 - Go 1.24+
