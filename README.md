@@ -16,8 +16,6 @@
 |------------|---------|
 | ![Drag and drop](docs/screenshots/drag.png) | ![Login](docs/screenshots/login.png) |
 
-> **Note**: Drop your screenshots into `docs/screenshots/` and remove this note.
-
 ---
 
 ## Features
