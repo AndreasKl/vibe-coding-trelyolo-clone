@@ -2,34 +2,7 @@
 
 > A fast, focused Kanban board — built with Go and SvelteKit.
 
-<!--
-  MEDIA GUIDE
-  -----------
-  To record the demo GIF, start both servers and use a tool like:
-    - LICEcap (cross-platform)       https://www.cockos.com/licecap/
-    - Peek (Linux)                   sudo dnf install peek
-    - kooha (Linux, Flatpak)         flatpak install flathub io.github.seadve.Kooha
-
-  Suggested recording (~30 s):
-    1. Open the dashboard — show two or three boards
-    2. Open a board — show columns and cards
-    3. Drag a card from one column to another
-    4. Drag a column to reorder it
-    5. Add a new card inline
-
-  Save the file as docs/screenshots/demo.gif (≤ 5 MB).
-
-  Screenshots (1280 × 800 px suggested, PNG):
-    dashboard.png     — board listing page
-    board.png         — kanban board with several cards
-    drag.png          — mid-drag, card or column floating
-    login.png         — login page
--->
-
-<!-- Replace this line with the actual demo once recorded: -->
-<!-- ![FlowBoard demo](docs/screenshots/demo.gif) -->
-
-**[Demo GIF coming soon — see MEDIA GUIDE comment above for recording instructions]**
+![FlowBoard demo](docs/screenshots/demo.gif)
 
 ---
 
