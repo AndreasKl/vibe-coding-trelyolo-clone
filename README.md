@@ -1,72 +1,102 @@
-# Trello Clone
+# FlowBoard
 
-A Kanban board web application. Create boards with columns, add cards, and drag them between columns.
+> A fast, focused Kanban board — built with Go and SvelteKit.
+
+<!--
+  MEDIA GUIDE
+  -----------
+  To record the demo GIF, start both servers and use a tool like:
+    - LICEcap (cross-platform)       https://www.cockos.com/licecap/
+    - Peek (Linux)                   sudo dnf install peek
+    - kooha (Linux, Flatpak)         flatpak install flathub io.github.seadve.Kooha
+
+  Suggested recording (~30 s):
+    1. Open the dashboard — show two or three boards
+    2. Open a board — show columns and cards
+    3. Drag a card from one column to another
+    4. Drag a column to reorder it
+    5. Add a new card inline
+
+  Save the file as docs/screenshots/demo.gif (≤ 5 MB).
+
+  Screenshots (1280 × 800 px suggested, PNG):
+    dashboard.png     — board listing page
+    board.png         — kanban board with several cards
+    drag.png          — mid-drag, card or column floating
+    login.png         — login page
+-->
+
+<!-- Replace this line with the actual demo once recorded: -->
+<!-- ![FlowBoard demo](docs/screenshots/demo.gif) -->
+
+**[Demo GIF coming soon — see MEDIA GUIDE comment above for recording instructions]**
+
+---
+
+## Screenshots
+
+| Dashboard | Board |
+|-----------|-------|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Board](docs/screenshots/board.png) |
+
+| Drag &amp; drop | Sign in |
+|------------|---------|
+| ![Drag and drop](docs/screenshots/drag.png) | ![Login](docs/screenshots/login.png) |
+
+> **Note**: Drop your screenshots into `docs/screenshots/` and remove this note.
+
+---
+
+## Features
+
+- **Boards** — create as many boards as you need, each pre-loaded with *Todo / Doing / Done* columns
+- **Columns** — add, rename, delete, and drag to reorder
+- **Cards** — create inline, edit in place, drag between columns
+- **Auth** — email/password sign-up or one-click sign-in via Google / Microsoft OAuth2
+- **Sessions** — HTTP-only cookies backed by the database; no JWT, no localStorage
+- **Real-time feel** — optimistic UI with instant drag feedback
+
+---
 
 ## Stack
 
-- **Backend**: Go, PostgreSQL 16, server-side sessions
-- **Frontend**: SvelteKit (Svelte 5), TypeScript
-- **Auth**: Email/password (bcrypt) + OAuth2 (Google, Microsoft)
+| Layer | Technology |
+|-------|-----------|
+| Backend | Go 1.24, `net/http` (Go 1.22 mux) |
+| Database | PostgreSQL 16, `pgx/v5` |
+| Frontend | SvelteKit 2, Svelte 5 (runes), TypeScript |
+| Auth | bcrypt + OAuth2 (Google, Microsoft) |
+| Dev DB | Docker Compose |
 
-## Architecture
-
-The app is split into two independent processes that talk over HTTP.
-
-```
-Browser
-  │
-  ├── GET /api/*  ──────────────────────────────► Go backend (:8080)
-  │                                                    │
-  │   (Vite proxy in dev; same origin in prod)         └── PostgreSQL
-  │
-  └── Everything else ──► SvelteKit (:5173 dev)
-```
-
-**Request flow**
-
-1. SvelteKit's `+layout.server.ts` runs on every navigation, calls `GET /api/auth/me`, and either returns the user or redirects to `/login`. Auth state is never stored client-side.
-2. Page components call the Go API directly from the browser via `$lib/api.ts`. All API calls include the session cookie automatically.
-3. The Go backend validates the session cookie on every protected route via the `RequireAuth` middleware, which looks up the token in the DB and injects the `*User` into the request context.
-
-**Session management**
-
-Sessions are stored as rows in PostgreSQL. The cookie holds a random token; there is no JWT. On login/signup the server sets an HTTP-only, `SameSite=Lax` cookie. On logout the token row is deleted and the cookie is cleared.
-
-**Data model**
-
-```
-users
-  └── boards (user_id FK)
-        └── board_columns (board_id FK, ordered by position)
-              └── cards (column_id FK, ordered by position)
-```
-
-Card positions are integers. Moving a card is a single transaction: close the gap in the source column, open a gap in the target column, then update the card's `column_id` and `position`.
-
-## Prerequisites
-
-- Go 1.24+
-- Node.js 25+ and pnpm
-- Docker (for PostgreSQL)
+---
 
 ## Getting Started
 
+**Prerequisites**: Go 1.24+, Node.js 20+, pnpm, Docker
+
 ```bash
-# Start PostgreSQL
+# 1. Clone and enter the repo
+git clone https://github.com/your-org/flowboard.git
+cd flowboard
+
+# 2. Configure environment
+cp .env.example .env          # edit if needed
+
+# 3. Start PostgreSQL
 docker compose up -d
 
-# Start the Go backend (runs migrations automatically)
-make dev-backend
+# 4. Start the Go backend (runs DB migrations automatically)
+make dev-backend              # http://localhost:8080
 
-# In a separate terminal, start the frontend
-make dev-frontend
+# 5. In a second terminal, start the frontend
+make dev-frontend             # http://localhost:5173
 ```
 
-Open http://localhost:5173.
+Open **http://localhost:5173** and sign up.
+
+---
 
 ## Configuration
-
-Copy `.env.example` to `.env` and adjust as needed:
 
 | Variable | Default | Description |
 |---|---|---|
@@ -74,85 +104,120 @@ Copy `.env.example` to `.env` and adjust as needed:
 | `PORT` | `8080` | Backend port |
 | `COOKIE_DOMAIN` | `localhost` | Session cookie domain |
 | `BASE_URL` | `http://localhost:5173` | Frontend origin (for CORS) |
-| `GOOGLE_CLIENT_ID` | | Google OAuth2 client ID |
-| `GOOGLE_CLIENT_SECRET` | | Google OAuth2 client secret |
-| `MICROSOFT_CLIENT_ID` | | Microsoft OAuth2 client ID |
-| `MICROSOFT_CLIENT_SECRET` | | Microsoft OAuth2 client secret |
+| `GOOGLE_CLIENT_ID` | *(empty)* | Google OAuth2 — leave blank to disable |
+| `GOOGLE_CLIENT_SECRET` | *(empty)* | |
+| `MICROSOFT_CLIENT_ID` | *(empty)* | Microsoft OAuth2 — leave blank to disable |
+| `MICROSOFT_CLIENT_SECRET` | *(empty)* | |
 
-OAuth is optional. Leave the client ID/secret empty to skip.
+---
+
+## Architecture
+
+```
+Browser
+  │
+  ├── /api/*  ──────────────────────► Go backend (:8080)
+  │         (Vite proxy in dev;              │
+  │          same origin in prod)       PostgreSQL
+  │
+  └── everything else ──► SvelteKit (:5173 in dev)
+```
+
+**Auth flow**: every navigation triggers `+layout.server.ts`, which calls `GET /api/auth/me`. If that fails, the user is redirected to `/login`. Auth state never lives in the browser — no JWT, no localStorage.
+
+**Data model**:
+
+```
+users
+  └── boards
+        └── board_columns  (ordered by position)
+              └── cards    (ordered by position)
+```
+
+Moving a card or column is a single transaction: close the gap at the source, open a gap at the target, update the row.
+
+---
 
 ## Project Structure
 
 ```
 backend/
-  cmd/server/main.go          # Entry point
+  cmd/server/main.go
   internal/
-    auth/                      # Signup, login, logout, OAuth2, sessions
-    board/                     # Boards, columns, cards CRUD + card moves
-    database/                  # DB connection, migrations
-    httputil/                  # JSON response helpers
-    server/                    # HTTP mux, middleware
+    auth/          # signup, login, logout, OAuth2, sessions
+    board/         # boards, columns, cards CRUD + move operations
+    database/      # connection + embedded migrations
+    httputil/      # JSON/error response helpers
+    server/        # HTTP mux + middleware chain
 
-frontend/
-  src/
-    lib/
-      api.ts                   # Typed fetch wrapper
-      types.ts                 # TypeScript interfaces
-      components/              # Navbar, BoardView, BoardColumn, BoardCard
-    routes/
-      +page.svelte             # Dashboard (list/create boards)
-      login/+page.svelte       # Login page
-      signup/+page.svelte      # Signup page
-      boards/[id]/+page.svelte # Kanban board view
+frontend/src/
+  lib/
+    api.ts         # typed fetch wrapper
+    types.ts       # TypeScript interfaces
+    components/    # Navbar, BoardView, BoardColumn, BoardCard
+  routes/
+    +page.svelte               # dashboard
+    login/, signup/            # auth pages
+    boards/[id]/+page.svelte   # kanban board
 ```
 
-## API Endpoints
+---
+
+## API Reference
 
 ### Auth
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/api/auth/signup` | No | Create account |
-| POST | `/api/auth/login` | No | Log in |
-| POST | `/api/auth/logout` | Yes | Log out |
-| GET | `/api/auth/me` | Yes | Current user |
-| GET | `/api/auth/oauth/{provider}` | No | Start OAuth flow |
-| GET | `/api/auth/oauth/{provider}/callback` | No | OAuth callback |
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/signup` | Create account |
+| POST | `/api/auth/login` | Log in |
+| POST | `/api/auth/logout` | Log out |
+| GET | `/api/auth/me` | Current user |
+| GET | `/api/auth/oauth/{provider}` | Start OAuth flow |
+| GET | `/api/auth/oauth/{provider}/callback` | OAuth callback |
 
-### Boards
+### Boards, Columns, Cards
 
 | Method | Path | Description |
-|---|---|---|
-| GET | `/api/boards` | List boards |
-| POST | `/api/boards` | Create board (auto-creates Todo/Doing/Done columns) |
-| GET | `/api/boards/{id}` | Get board with columns and cards |
-| DELETE | `/api/boards/{id}` | Delete board |
-
-### Columns
-
-| Method | Path | Description |
-|---|---|---|
+|--------|------|-------------|
+| GET/POST | `/api/boards` | List / create boards |
+| GET/DELETE | `/api/boards/{id}` | Get / delete board |
 | POST | `/api/boards/{boardID}/columns` | Add column |
-| PATCH | `/api/columns/{id}` | Rename/reorder column |
-| DELETE | `/api/columns/{id}` | Delete column |
-
-### Cards
-
-| Method | Path | Description |
-|---|---|---|
+| PATCH/DELETE | `/api/columns/{id}` | Rename or delete column |
+| POST | `/api/columns/{id}/move` | Reorder column `{ position }` |
 | POST | `/api/columns/{columnID}/cards` | Create card |
-| PATCH | `/api/cards/{id}` | Update title/description |
-| DELETE | `/api/cards/{id}` | Delete card |
-| POST | `/api/cards/{id}/move` | Move card to column + position |
+| PATCH/DELETE | `/api/cards/{id}` | Update or delete card |
+| POST | `/api/cards/{id}/move` | Move card `{ column_id, position }` |
+
+---
+
+## Development
+
+```bash
+make test            # run all tests
+make test-backend    # Go tests (requires PostgreSQL)
+make test-frontend   # Vitest only
+
+# Run a single Go test
+cd backend && go test ./internal/board/... -run TestMoveCard
+
+# Run a single frontend test
+cd frontend && pnpm test --run -- BoardCard
+
+# Type-check + lint frontend
+cd frontend && pnpm check && pnpm lint
+```
+
+---
 
 ## Make Targets
 
 | Target | Description |
-|---|---|
-| `make dev-backend` | Run Go backend with hot reload |
-| `make dev-frontend` | Run SvelteKit dev server |
-| `make dev` | Start DB + both servers |
-| `make build` | Build backend binary + frontend |
-| `make test` | Run Go tests |
+|--------|-------------|
+| `make dev-backend` | Go backend with hot reload |
+| `make dev-frontend` | SvelteKit dev server |
+| `make dev` | DB + both servers |
+| `make build` | Production binary + frontend bundle |
+| `make test` | All tests |
 | `make db-up` | Start PostgreSQL |
 | `make db-down` | Stop PostgreSQL |
